@@ -1,3 +1,4 @@
+import { StatisticType } from "../../../data/history";
 import { ActionConfig, LovelaceCardConfig } from "../../../data/lovelace";
 import { FullCalendarView } from "../../../types";
 import { Condition } from "../common/validate-condition";
@@ -214,6 +215,7 @@ export interface StatisticsGraphCardConfig extends LovelaceCardConfig {
   entities: Array<EntityConfig | string>;
   days_to_show?: number;
   refresh_interval?: number;
+  stat_types?: StatisticType | Array<StatisticType>;
   title?: string;
 }
 

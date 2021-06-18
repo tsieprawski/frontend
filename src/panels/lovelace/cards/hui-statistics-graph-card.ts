@@ -44,7 +44,6 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
       throw new Error("You must include at least one entity");
     }
 
-    this._config = config;
     const configEntities = config.entities
       ? processConfigEntities(config.entities)
       : [];
@@ -55,6 +54,14 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
         this._names[entity.entity] = entity.name;
       }
     });
+
+    if (typeof config.stat_types === "string") {
+      this._config = { ...config, stat_types: [config.stat_types] };
+    } else if (!config.stat_types) {
+      this._config = { ...config, stat_types: ["sum", "min", "max", "mean"] };
+    } else {
+      this._config = config;
+    }
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
@@ -95,6 +102,7 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
             .hass=${this.hass}
             .isLoadingData=${!this._statistics}
             .statisticsData=${this._statistics}
+            .statTypes=${this._config.stat_types}
             .names=${this._names}
           ></statistics-charts>
         </div>
