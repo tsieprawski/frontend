@@ -31,6 +31,30 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
 
   private _fetching = false;
 
+  private _interval?: number;
+
+  public disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._interval) {
+      clearInterval(this._interval);
+      this._interval = undefined;
+    }
+  }
+
+  public connectedCallback() {
+    super.connectedCallback();
+    if (!this.hasUpdated) {
+      return;
+    }
+    this._getStatistics();
+    // statistics are created every hour
+    clearInterval(this._interval);
+    this._interval = window.setInterval(
+      () => this._getStatistics(),
+      1000 * 60 * 60
+    );
+  }
+
   public getCardSize(): number {
     return this._config?.title ? 2 : 0 + 2 * (this._entities?.length || 1);
   }
@@ -83,6 +107,12 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
 
     if (oldConfig?.entities !== this._config.entities) {
       this._getStatistics();
+      // statistics are created every hour
+      clearInterval(this._interval);
+      this._interval = window.setInterval(
+        () => this._getStatistics(),
+        1000 * 60 * 60
+      );
     }
   }
 
@@ -114,13 +144,15 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
     if (this._fetching) {
       return;
     }
+    const startDate = new Date();
+    startDate.setHours(-24 * (this._config!.days_to_show || 30));
     this._fetching = true;
     try {
       this._statistics = await fetchStatistics(
         this.hass!,
-        new Date("2020-01-01"),
+        startDate,
         undefined,
-        this._entities.join()
+        this._entities
       );
     } finally {
       this._fetching = false;

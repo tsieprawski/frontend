@@ -212,11 +212,10 @@ export interface HistoryGraphCardConfig extends LovelaceCardConfig {
 }
 
 export interface StatisticsGraphCardConfig extends LovelaceCardConfig {
+  title?: string;
   entities: Array<EntityConfig | string>;
   days_to_show?: number;
-  refresh_interval?: number;
   stat_types?: StatisticType | Array<StatisticType>;
-  title?: string;
 }
 
 export interface PictureCardConfig extends LovelaceCardConfig {
