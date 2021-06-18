@@ -210,6 +210,13 @@ export interface HistoryGraphCardConfig extends LovelaceCardConfig {
   title?: string;
 }
 
+export interface StatisticsGraphCardConfig extends LovelaceCardConfig {
+  entities: Array<EntityConfig | string>;
+  days_to_show?: number;
+  refresh_interval?: number;
+  title?: string;
+}
+
 export interface PictureCardConfig extends LovelaceCardConfig {
   image?: string;
   tap_action?: ActionConfig;

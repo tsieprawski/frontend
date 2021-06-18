@@ -6,6 +6,11 @@ import { LineChartEntity, LineChartState } from "../../data/history";
 import { HomeAssistant } from "../../types";
 import "./ha-chart-base";
 
+const safeParseFloat = (value) => {
+  const parsed = parseFloat(value);
+  return isFinite(parsed) ? parsed : null;
+};
+
 class StateHistoryChartLine extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
 
@@ -122,21 +127,15 @@ class StateHistoryChartLine extends LitElement {
       return;
     }
 
-    function safeParseFloat(value) {
-      const parsed = parseFloat(value);
-      return isFinite(parsed) ? parsed : null;
-    }
-
     endTime =
       this.endTime ||
       // Get the highest date from the last date of each device
       new Date(
-        Math.max.apply(
-          null,
-          deviceStates.map((devSts) =>
+        Math.max(
+          ...deviceStates.map((devSts) =>
             new Date(
               devSts.states[devSts.states.length - 1].last_changed
-            ).getMilliseconds()
+            ).getTime()
           )
         )
       );
