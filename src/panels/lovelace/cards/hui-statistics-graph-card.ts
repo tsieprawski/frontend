@@ -132,7 +132,10 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
             .hass=${this.hass}
             .isLoadingData=${!this._statistics}
             .statisticsData=${this._statistics}
-            .statTypes=${this._config.stat_types}
+            .chartType=${this._config.chart_type || "line"}
+            .chartPlugins=${this._config.chart_plugins}
+            .chartOptions=${this._config.chart_options}
+            .statTypes=${this._config.stat_types!}
             .names=${this._names}
           ></statistics-charts>
         </div>

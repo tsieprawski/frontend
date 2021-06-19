@@ -16,18 +16,23 @@ interface Tooltip extends TooltipModel<any> {
   left: string;
 }
 
+export type ChartPlugin = "datalabels";
+
+export const chartPlugins = {
+  datalabels: async () => (await import("chartjs-plugin-datalabels")).default,
+};
+
 @customElement("ha-chart-base")
 export default class HaChartBase extends LitElement {
   public chart?: Chart;
 
-  @property()
-  public chartType: ChartType = "line";
+  @property() public chartType: ChartType = "line";
 
-  @property({ attribute: false })
-  public data: ChartData = { datasets: [] };
+  @property({ attribute: false }) public data: ChartData = { datasets: [] };
 
-  @property({ attribute: false })
-  public options?: ChartOptions;
+  @property({ attribute: false }) public options?: ChartOptions;
+
+  @property({ attribute: false }) public plugins?: any[];
 
   @state() private _tooltip?: Tooltip;
 
@@ -50,11 +55,14 @@ export default class HaChartBase extends LitElement {
     if (!this.hasUpdated || !this.chart) {
       return;
     }
-
+    if (changedProps.has("plugins")) {
+      this.chart.destroy();
+      this._setupChart();
+      return;
+    }
     if (changedProps.has("type")) {
       this.chart.config.type = this.chartType;
     }
-
     if (changedProps.has("data")) {
       this.chart.data = this.data;
     }
@@ -148,33 +156,40 @@ export default class HaChartBase extends LitElement {
       type: this.chartType,
       data: this.data,
       options: this._createOptions(),
-      plugins: [
-        {
-          id: "afterRenderHook",
-          afterRender: (chart) => {
-            this._height = `${chart.height}px`;
-          },
-        },
-      ],
+      plugins: this._createPlugins(),
     });
   }
 
   private _createOptions() {
-    return {
-      ...this.options,
-      plugins: {
-        ...this.options?.plugins,
-        tooltip: {
-          ...this.options?.plugins?.tooltip,
-          enabled: false,
-          external: (context) => this._handleTooltip(context),
+    return this.options?.plugins?.tooltip?.enabled === false
+      ? this.options
+      : {
+          ...this.options,
+          plugins: {
+            ...this.options?.plugins,
+            tooltip: {
+              ...this.options?.plugins?.tooltip,
+              enabled: false,
+              external: (context) => this._handleTooltip(context),
+            },
+          },
+        };
+  }
+
+  private _createPlugins() {
+    return [
+      ...(this.plugins || []),
+      {
+        id: "afterRenderHook",
+        afterRender: (chart) => {
+          this._height = `${chart.height}px`;
         },
         legend: {
           ...this.options?.plugins?.legend,
           display: false,
         },
       },
-    };
+    ];
   }
 
   private _legendClick(ev) {

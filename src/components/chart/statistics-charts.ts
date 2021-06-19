@@ -6,15 +6,21 @@ import {
   PropertyValues,
   TemplateResult,
 } from "lit";
-import type { ChartData, ChartDataset, ChartOptions } from "chart.js";
+import type {
+  ChartData,
+  ChartDataset,
+  ChartOptions,
+  ChartType,
+} from "chart.js";
 import { customElement, property, state } from "lit/decorators";
 import { isComponentLoaded } from "../../common/config/is_component_loaded";
 import { Statistics, StatisticType, StatisticValue } from "../../data/history";
 import type { HomeAssistant } from "../../types";
 import "../ha-circular-progress";
-import "./ha-chart-base";
 import { getColorByIndex } from "../../common/color/colors";
 import { computeStateName } from "../../common/entity/compute_state_name";
+import { chartPlugins, ChartPlugin } from "./ha-chart-base";
+import merge from "deepmerge";
 
 const statsHaveType = (stats: StatisticValue[], type: StatisticType) =>
   stats.some((stat) => stat[type] !== null);
@@ -36,86 +42,34 @@ class StatisticsCharts extends LitElement {
     "mean",
   ];
 
+  @property() public chartType: ChartType = "line";
+
+  @property({ attribute: false }) public chartPlugins?: ChartPlugin[];
+
+  @property({ attribute: false }) public chartOptions?: Partial<ChartOptions>;
+
   @property({ type: Boolean, attribute: "up-to-now" }) public upToNow = false;
 
   @property({ type: Boolean, attribute: "no-single" }) public noSingle = false;
 
   @property({ type: Boolean }) public isLoadingData = false;
 
-  @state() private _chartData?: ChartData<"line">;
+  @state() private _chartData?: ChartData;
 
-  @state() private _chartOptions?: ChartOptions<"line">;
+  @state() private _chartOptions?: ChartOptions;
+
+  @state() private _chartPlugins?: any[];
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     return !(changedProps.size === 1 && changedProps.has("hass"));
   }
 
   public willUpdate(changedProps: PropertyValues) {
-    if (!this.hasUpdated) {
-      this._chartOptions = {
-        parsing: false,
-        animation: false,
-        scales: {
-          x: {
-            type: "time",
-            adapters: {
-              date: {
-                locale: this.hass.locale,
-              },
-            },
-            ticks: {
-              maxRotation: 0,
-              sampleSize: 5,
-              autoSkipPadding: 20,
-              major: {
-                enabled: true,
-              },
-              font: (context) =>
-                context.tick && context.tick.major
-                  ? ({ weight: "bold" } as any)
-                  : {},
-            },
-            time: {
-              tooltipFormat: "datetimeseconds",
-            },
-          },
-          y: {
-            ticks: {
-              maxTicksLimit: 7,
-            },
-          },
-        },
-        plugins: {
-          tooltip: {
-            mode: "nearest",
-            callbacks: {
-              label: (context) =>
-                `${context.dataset.label}: ${context.parsed.y}`,
-            },
-          },
-          filler: {
-            propagate: true,
-          },
-          legend: {
-            display: false,
-            labels: {
-              usePointStyle: true,
-            },
-          },
-        },
-        hover: {
-          mode: "nearest",
-        },
-        elements: {
-          line: {
-            tension: 0.4,
-            borderWidth: 1.5,
-          },
-          point: {
-            hitRadius: 5,
-          },
-        },
-      };
+    if (!this.hasUpdated || changedProps.has("chartOptions")) {
+      this._createOptions();
+    }
+    if (changedProps.has("chartPlugins")) {
+      this._loadPlugins();
     }
     if (changedProps.has("statisticsData")) {
       this._generateData();
@@ -149,9 +103,91 @@ class StatisticsCharts extends LitElement {
       <ha-chart-base
         .data=${this._chartData}
         .options=${this._chartOptions}
-        chartType="line"
+        .plugins=${this._chartPlugins}
+        .chartType=${this.chartType}
       ></ha-chart-base>
     `;
+  }
+
+  private _createOptions() {
+    const options: ChartOptions = {
+      parsing: false,
+      animation: false,
+      scales: {
+        x: {
+          type: "time",
+          adapters: {
+            date: {
+              locale: this.hass.locale,
+            },
+          },
+          ticks: {
+            maxRotation: 0,
+            sampleSize: 5,
+            autoSkipPadding: 20,
+            major: {
+              enabled: true,
+            },
+            font: (context) =>
+              context.tick && context.tick.major
+                ? ({ weight: "bold" } as any)
+                : {},
+          },
+          time: {
+            tooltipFormat: "datetimeseconds",
+          },
+        },
+        y: {
+          ticks: {
+            maxTicksLimit: 7,
+          },
+        },
+      },
+      plugins: {
+        tooltip: {
+          mode: "nearest",
+          callbacks: {
+            label: (context) => `${context.dataset.label}: ${context.parsed.y}`,
+          },
+        },
+        filler: {
+          propagate: true,
+        },
+        legend: {
+          display: false,
+          labels: {
+            usePointStyle: true,
+          },
+        },
+      },
+      hover: {
+        mode: "nearest",
+      },
+      elements: {
+        line: {
+          tension: 0.4,
+          borderWidth: 1.5,
+        },
+        point: {
+          hitRadius: 5,
+        },
+      },
+    };
+    this._chartOptions = this.chartOptions
+      ? merge(options, this.chartOptions)
+      : options;
+  }
+
+  private async _loadPlugins() {
+    const pluginPromisses = this.chartPlugins?.map((plugin) =>
+      chartPlugins[plugin]()
+    );
+
+    if (pluginPromisses) {
+      this._chartPlugins = await Promise.all(pluginPromisses);
+    } else {
+      this._chartPlugins = undefined;
+    }
   }
 
   private _generateData() {

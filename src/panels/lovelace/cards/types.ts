@@ -1,3 +1,5 @@
+import { ChartOptions } from "chart.js";
+import { ChartPlugin } from "../../../components/chart/ha-chart-base";
 import { StatisticType } from "../../../data/history";
 import { ActionConfig, LovelaceCardConfig } from "../../../data/lovelace";
 import { FullCalendarView } from "../../../types";
@@ -215,7 +217,10 @@ export interface StatisticsGraphCardConfig extends LovelaceCardConfig {
   title?: string;
   entities: Array<EntityConfig | string>;
   days_to_show?: number;
-  stat_types?: StatisticType | Array<StatisticType>;
+  stat_types?: StatisticType | StatisticType[];
+  chart_type?: "line" | "bar";
+  chart_plugins?: ChartPlugin[];
+  chart_options?: Partial<ChartOptions>;
 }
 
 export interface PictureCardConfig extends LovelaceCardConfig {
