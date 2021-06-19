@@ -159,6 +159,12 @@ class StatisticsCharts extends LitElement {
             usePointStyle: true,
           },
         },
+        datalabels: {
+          align: "end",
+          anchor: "end",
+          display: "auto",
+          formatter: (value) => value.y,
+        },
       },
       hover: {
         mode: "nearest",
