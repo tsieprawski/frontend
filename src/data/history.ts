@@ -291,3 +291,23 @@ export const computeHistory = (
 
   return { line: unitStates, timeline: timelineDevices };
 };
+
+export const calculateStatisticsSumGrowth = (
+  values: StatisticValue[]
+): number | null => {
+  if (values.length === 0) {
+    return null;
+  }
+  if (values.length === 1) {
+    return values[0].sum;
+  }
+  const endSum = values[values.length - 1].sum;
+  if (endSum === null) {
+    return null;
+  }
+  const startSum = values[0].sum;
+  if (startSum === null) {
+    return endSum;
+  }
+  return endSum - startSum;
+};
