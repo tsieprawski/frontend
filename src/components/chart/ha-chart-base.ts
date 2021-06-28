@@ -161,19 +161,21 @@ export default class HaChartBase extends LitElement {
   }
 
   private _createOptions() {
-    return this.options?.plugins?.tooltip?.enabled === false
-      ? this.options
-      : {
-          ...this.options,
-          plugins: {
-            ...this.options?.plugins,
-            tooltip: {
-              ...this.options?.plugins?.tooltip,
-              enabled: false,
-              external: (context) => this._handleTooltip(context),
-            },
-          },
-        };
+    return {
+      ...this.options,
+      plugins: {
+        ...this.options?.plugins,
+        tooltip: {
+          ...this.options?.plugins?.tooltip,
+          enabled: false,
+          external: (context) => this._handleTooltip(context),
+        },
+        legend: {
+          ...this.options?.plugins?.legend,
+          display: false,
+        },
+      },
+    };
   }
 
   private _createPlugins() {
