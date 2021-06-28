@@ -9,7 +9,7 @@ import {
 import { customElement, property, state } from "lit/decorators";
 import { classMap } from "lit/directives/class-map";
 import "../../../components/ha-card";
-import "../../../components/chart/statistics-charts";
+import "../../../components/chart/statistics-chart";
 import { HomeAssistant } from "../../../types";
 import { hasConfigOrEntitiesChanged } from "../common/has-changed";
 import { processConfigEntities } from "../common/process-config-entities";
@@ -96,7 +96,7 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
   }
 
   public willUpdate(changedProps: PropertyValues) {
-    super.updated(changedProps);
+    super.willUpdate(changedProps);
     if (!this._config || !changedProps.has("_config")) {
       return;
     }
@@ -128,16 +128,14 @@ export class HuiStatisticsGraphCard extends LitElement implements LovelaceCard {
             "has-header": !!this._config.title,
           })}"
         >
-          <statistics-charts
+          <statistics-chart
             .hass=${this.hass}
             .isLoadingData=${!this._statistics}
             .statisticsData=${this._statistics}
             .chartType=${this._config.chart_type || "line"}
-            .chartPlugins=${this._config.chart_plugins}
-            .chartOptions=${this._config.chart_options}
             .statTypes=${this._config.stat_types!}
             .names=${this._names}
-          ></statistics-charts>
+          ></statistics-chart>
         </div>
       </ha-card>
     `;

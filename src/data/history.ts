@@ -17,23 +17,6 @@ const LINE_ATTRIBUTES_TO_KEEP = [
   "mode",
 ];
 
-export type StatisticType = "sum" | "min" | "max" | "mean";
-
-export interface Statistics {
-  [statisticId: string]: StatisticValue[];
-}
-
-export interface StatisticValue {
-  statistic_id: string;
-  start: string;
-  last_reset: string | null;
-  max: number | null;
-  mean: number | null;
-  min: number | null;
-  sum: number | null;
-  state: number | null;
-}
-
 export interface LineChartState {
   state: string;
   last_changed: string;
@@ -68,6 +51,23 @@ export interface TimelineEntity {
 export interface HistoryResult {
   line: LineChartUnit[];
   timeline: TimelineEntity[];
+}
+
+export type StatisticType = "sum" | "min" | "max" | "mean";
+
+export interface Statistics {
+  [statisticId: string]: StatisticValue[];
+}
+
+export interface StatisticValue {
+  statistic_id: string;
+  start: string;
+  last_reset: string | null;
+  max: number | null;
+  mean: number | null;
+  min: number | null;
+  sum: number | null;
+  state: number | null;
 }
 
 export const fetchRecent = (
@@ -112,28 +112,6 @@ export const fetchDate = (
       entityId ? `&filter_entity_id=${entityId}` : ``
     }`
   );
-
-export const getStatisticIds = (
-  hass: HomeAssistant,
-  statistic_type?: "mean" | "sum"
-) =>
-  hass.callWS<string[]>({
-    type: "history/list_statistic_ids",
-    statistic_type,
-  });
-
-export const fetchStatistics = (
-  hass: HomeAssistant,
-  startTime: Date,
-  endTime?: Date,
-  statistic_ids?: string[]
-) =>
-  hass.callWS<Statistics>({
-    type: "history/statistics_during_period",
-    start_time: startTime.toISOString(),
-    end_time: endTime?.toISOString(),
-    statistic_ids,
-  });
 
 const equalState = (obj1: LineChartState, obj2: LineChartState) =>
   obj1.state === obj2.state &&
@@ -292,6 +270,30 @@ export const computeHistory = (
   return { line: unitStates, timeline: timelineDevices };
 };
 
+// Statistics
+
+export const getStatisticIds = (
+  hass: HomeAssistant,
+  statistic_type?: "mean" | "sum"
+) =>
+  hass.callWS<string[]>({
+    type: "history/list_statistic_ids",
+    statistic_type,
+  });
+
+export const fetchStatistics = (
+  hass: HomeAssistant,
+  startTime: Date,
+  endTime?: Date,
+  statistic_ids?: string[]
+) =>
+  hass.callWS<Statistics>({
+    type: "history/statistics_during_period",
+    start_time: startTime.toISOString(),
+    end_time: endTime?.toISOString(),
+    statistic_ids,
+  });
+
 export const calculateStatisticsSumGrowth = (
   values: StatisticValue[]
 ): number | null => {
@@ -311,3 +313,8 @@ export const calculateStatisticsSumGrowth = (
   }
   return endSum - startSum;
 };
+
+export const statisticsHaveType = (
+  stats: StatisticValue[],
+  type: StatisticType
+) => stats.some((stat) => stat[type] !== null);

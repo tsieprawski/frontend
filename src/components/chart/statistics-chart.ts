@@ -1,3 +1,9 @@
+import type {
+  ChartData,
+  ChartDataset,
+  ChartOptions,
+  ChartType,
+} from "chart.js";
 import {
   css,
   CSSResultGroup,
@@ -6,27 +12,21 @@ import {
   PropertyValues,
   TemplateResult,
 } from "lit";
-import type {
-  ChartData,
-  ChartDataset,
-  ChartOptions,
-  ChartType,
-} from "chart.js";
 import { customElement, property, state } from "lit/decorators";
+import { getColorByIndex } from "../../common/color/colors";
 import { isComponentLoaded } from "../../common/config/is_component_loaded";
-import { Statistics, StatisticType, StatisticValue } from "../../data/history";
+import { computeStateName } from "../../common/entity/compute_state_name";
+import {
+  Statistics,
+  statisticsHaveType,
+  StatisticType,
+} from "../../data/history";
 import type { HomeAssistant } from "../../types";
 import "../ha-circular-progress";
-import { getColorByIndex } from "../../common/color/colors";
-import { computeStateName } from "../../common/entity/compute_state_name";
-import { chartPlugins, ChartPlugin } from "./ha-chart-base";
-import merge from "deepmerge";
+import "./ha-chart-base";
 
-const statsHaveType = (stats: StatisticValue[], type: StatisticType) =>
-  stats.some((stat) => stat[type] !== null);
-
-@customElement("statistics-charts")
-class StatisticsCharts extends LitElement {
+@customElement("statistics-chart")
+class StatisticsChart extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @property({ attribute: false }) public statisticsData!: Statistics;
@@ -44,14 +44,6 @@ class StatisticsCharts extends LitElement {
 
   @property() public chartType: ChartType = "line";
 
-  @property({ attribute: false }) public chartPlugins?: ChartPlugin[];
-
-  @property({ attribute: false }) public chartOptions?: Partial<ChartOptions>;
-
-  @property({ type: Boolean, attribute: "up-to-now" }) public upToNow = false;
-
-  @property({ type: Boolean, attribute: "no-single" }) public noSingle = false;
-
   @property({ type: Boolean }) public isLoadingData = false;
 
   @state() private _chartData?: ChartData;
@@ -65,11 +57,8 @@ class StatisticsCharts extends LitElement {
   }
 
   public willUpdate(changedProps: PropertyValues) {
-    if (!this.hasUpdated || changedProps.has("chartOptions")) {
+    if (!this.hasUpdated) {
       this._createOptions();
-    }
-    if (changedProps.has("chartPlugins")) {
-      this._loadPlugins();
     }
     if (changedProps.has("statisticsData")) {
       this._generateData();
@@ -110,7 +99,7 @@ class StatisticsCharts extends LitElement {
   }
 
   private _createOptions() {
-    const options: ChartOptions = {
+    this._chartOptions = {
       parsing: false,
       animation: false,
       scales: {
@@ -159,12 +148,6 @@ class StatisticsCharts extends LitElement {
             usePointStyle: true,
           },
         },
-        datalabels: {
-          align: "end",
-          anchor: "end",
-          display: "auto",
-          formatter: (value) => value.y,
-        },
       },
       hover: {
         mode: "nearest",
@@ -179,21 +162,6 @@ class StatisticsCharts extends LitElement {
         },
       },
     };
-    this._chartOptions = this.chartOptions
-      ? merge(options, this.chartOptions)
-      : options;
-  }
-
-  private async _loadPlugins() {
-    const pluginPromisses = this.chartPlugins?.map((plugin) =>
-      chartPlugins[plugin]()
-    );
-
-    if (pluginPromisses) {
-      this._chartPlugins = await Promise.all(pluginPromisses);
-    } else {
-      this._chartPlugins = undefined;
-    }
   }
 
   private _generateData() {
@@ -284,7 +252,7 @@ class StatisticsCharts extends LitElement {
       const statTypes: this["statTypes"] = [];
 
       this.statTypes.forEach((type) => {
-        if (statsHaveType(stats, type)) {
+        if (statisticsHaveType(stats, type)) {
           statTypes.push(type);
           addDataSet(
             `${name} (${this.hass.localize(
@@ -342,6 +310,6 @@ class StatisticsCharts extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "statistics-charts": StatisticsCharts;
+    "statistics-chart": StatisticsChart;
   }
 }

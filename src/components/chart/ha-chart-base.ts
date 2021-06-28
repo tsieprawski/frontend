@@ -16,12 +16,6 @@ interface Tooltip extends TooltipModel<any> {
   left: string;
 }
 
-export type ChartPlugin = "datalabels";
-
-export const chartPlugins = {
-  datalabels: async () => (await import("chartjs-plugin-datalabels")).default,
-};
-
 @customElement("ha-chart-base")
 export default class HaChartBase extends LitElement {
   public chart?: Chart;

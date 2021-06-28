@@ -1,5 +1,3 @@
-import { ChartOptions } from "chart.js";
-import { ChartPlugin } from "../../../components/chart/ha-chart-base";
 import { EnergyPreferences } from "../../../data/energy";
 import { StatisticType } from "../../../data/history";
 import { ActionConfig, LovelaceCardConfig } from "../../../data/lovelace";
@@ -94,6 +92,11 @@ export interface ButtonCardConfig extends LovelaceCardConfig {
 
 export interface EnergySummaryCardConfig extends LovelaceCardConfig {
   type: "energy-summary";
+  prefs: EnergyPreferences;
+}
+
+export interface EnergySummaryGraphCardConfig extends LovelaceCardConfig {
+  type: "energy-summary-graph";
   prefs: EnergyPreferences;
 }
 
@@ -225,8 +228,6 @@ export interface StatisticsGraphCardConfig extends LovelaceCardConfig {
   days_to_show?: number;
   stat_types?: StatisticType | StatisticType[];
   chart_type?: "line" | "bar";
-  chart_plugins?: ChartPlugin[];
-  chart_options?: Partial<ChartOptions>;
 }
 
 export interface PictureCardConfig extends LovelaceCardConfig {
