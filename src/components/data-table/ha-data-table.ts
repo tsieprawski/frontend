@@ -1,4 +1,4 @@
-import { Layout1d, scroll } from "../../resources/lit-virtualizer";
+import { Layout1d, scroll } from "@lit-labs/virtualizer";
 import deepClone from "deep-clone-simple";
 import {
   css,
