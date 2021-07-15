@@ -13,6 +13,7 @@ import type { HomeAssistant } from "../../types";
 import "../ha-circular-progress";
 import "./state-history-chart-line";
 import "./state-history-chart-timeline";
+import "./state-history-map";
 
 @customElement("state-history-charts")
 class StateHistoryCharts extends LitElement {
@@ -65,6 +66,17 @@ class StateHistoryCharts extends LitElement {
             ></state-history-chart-timeline>
           `
         : html``}
+      ${this.historyData.map.entities.length ||
+      this.historyData.map.paths.length
+        ? html`
+            <state-history-map
+              .hass=${this.hass}
+              .data=${this.historyData.map}
+              .endTime=${computedEndTime}
+              .noSingle=${this.noSingle}
+            ></state-history-chart-timeline>
+          `
+        : html``}
       ${this.historyData.line.map(
         (line) => html`
           <state-history-chart-line
@@ -91,8 +103,11 @@ class StateHistoryCharts extends LitElement {
     const historyDataEmpty =
       !this.historyData ||
       !this.historyData.timeline ||
+      !this.historyData.map ||
       !this.historyData.line ||
       (this.historyData.timeline.length === 0 &&
+        this.historyData.map.entities.length === 0 &&
+        this.historyData.map.paths.length === 0 &&
         this.historyData.line.length === 0);
     return !this.isLoadingData && historyDataEmpty;
   }

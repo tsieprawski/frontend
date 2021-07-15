@@ -1,7 +1,10 @@
 import { HassEntity } from "home-assistant-js-websocket";
+import { LatLngTuple } from "leaflet";
+import { computeDomain } from "../common/entity/compute_domain";
 import { computeStateDisplay } from "../common/entity/compute_state_display";
 import { computeStateDomain } from "../common/entity/compute_state_domain";
 import { computeStateName } from "../common/entity/compute_state_name";
+import { getColorByIndex } from "../common/color/colors";
 import { LocalizeFunc } from "../common/translations/localize";
 import { HomeAssistant } from "../types";
 import { FrontendLocaleData } from "./translation";
@@ -87,14 +90,21 @@ export const fetchDate = (
   hass: HomeAssistant,
   startTime: Date,
   endTime: Date,
-  entityId
-): Promise<HassEntity[][]> =>
-  hass.callApi(
-    "GET",
-    `history/period/${startTime.toISOString()}?end_time=${endTime.toISOString()}&minimal_response${
-      entityId ? `&filter_entity_id=${entityId}` : ``
-    }`
-  );
+  entityId,
+  significantChangesOnly? = true,
+  minimalResponse = true
+): Promise<HassEntity[][]> => {
+  let url = `history/period/${startTime.toISOString()}?end_time=${endTime.toISOString()}${
+    entityId ? `&filter_entity_id=${entityId}` : ``
+  }`;
+  if (significantChangesOnly !== undefined) {
+    url += `&significant_changes_only=${Number(significantChangesOnly)}`;
+  }
+  if (minimalResponse) {
+    url += "&minimal_response";
+  }
+  return hass.callApi("GET", url);
+};
 
 const equalState = (obj1: LineChartState, obj2: LineChartState) =>
   obj1.state === obj2.state &&
@@ -206,6 +216,8 @@ export const computeHistory = (
   localize: LocalizeFunc
 ): HistoryResult => {
   const lineChartDevices: { [unit: string]: HassEntity[][] } = {};
+  const mapEntities: string[] = [];
+  const mapPaths: HaMapPaths[] = [];
   const timelineDevices: TimelineEntity[] = [];
   if (!stateHistory) {
     return { line: [], timeline: [] };
@@ -219,6 +231,35 @@ export const computeHistory = (
     const stateWithUnit = stateInfo.find(
       (state) => state.attributes && "unit_of_measurement" in state.attributes
     );
+
+    // filter location data from states and remove all invalid locations
+    const points = stateInfo.reduce(
+      (accumulator: LatLngTuple[], entityState) => {
+        if (entityState.attributes) {
+          const latitude = entityState.attributes.latitude;
+          const longitude = entityState.attributes.longitude;
+          if (latitude && longitude) {
+            accumulator.push([latitude, longitude] as LatLngTuple);
+          }
+        }
+        return accumulator;
+      },
+      []
+    ) as LatLngTuple[];
+
+    if (points.length) {
+      const entityId = stateInfo[0].entity_id;
+      const color = getColorByIndex(mapEntities.length);
+      mapEntities.push({
+        entity_id: entityId,
+        color: color,
+      });
+      mapPaths.push({
+        points,
+        color: color,
+        gradualOpacity: 0.8,
+      });
+    }
 
     let unit: string | undefined;
 
@@ -250,5 +291,12 @@ export const computeHistory = (
     processLineChartEntities(unit, lineChartDevices[unit])
   );
 
-  return { line: unitStates, timeline: timelineDevices };
+  return {
+    line: unitStates,
+    map: {
+      entities: mapEntities,
+      paths: mapPaths,
+    },
+    timeline: timelineDevices,
+  };
 };

@@ -166,11 +166,15 @@ class HaPanelHistory extends LitElement {
 
   private async _getHistory() {
     this._isLoading = true;
+    const significantChangesOnly = false;
+    const minimalResponse = false;
     const dateHistory = await fetchDate(
       this.hass,
       this._startDate,
       this._endDate,
-      this._entityId
+      this._entityId,
+      significantChangesOnly,
+      minimalResponse
     );
     this._stateHistory = computeHistory(
       this.hass,
